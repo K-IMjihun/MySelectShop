@@ -52,12 +52,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponseDto> getProducts(User user, int page, int size, String sortBy, boolean isAsc) {
 
-        // 정렬
-        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sort = Sort.by(direction, sortBy);
-
-        // pageable 생성
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = paging(page, size, sortBy, isAsc);
 
         // 권한 확인
         UserRoleEnum userRoleEnum = user.getRole();
@@ -70,6 +65,7 @@ public class ProductService {
 
         return productList.map(ProductResponseDto::new);
     }
+
 
     public void addFolder(Long productId, Long folderId, User user) {
         Product product = productRepository.findById(productId).orElseThrow(() ->
@@ -103,4 +99,21 @@ public class ProductService {
         product.updateByItemDto(itemDto);
     }
 
+    public Page<ProductResponseDto> getProductsInFolder(Long folderId, int page, int size, String sortBy, boolean isAsc, User user) {
+        Pageable pageable = paging(page, size, sortBy, isAsc);
+
+        Page<Product> productList = productRepository.findAllByUserAndProductFolderList_FolderId(user, folderId, pageable);
+
+        Page<ProductResponseDto> responseDtoList = productList.map(ProductResponseDto::new);
+        return responseDtoList;
+    }
+
+    private Pageable paging(int page, int size, String sortBy, boolean isAsc) {
+        // 정렬
+        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+
+        // pageable 생성
+        return PageRequest.of(page, size, sort);
+    }
 }
